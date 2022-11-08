@@ -12,6 +12,7 @@ type proxyTagService struct {
 	remoteTags     distribution.TagService
 	authChallenger authChallenger
 	enableWrite    bool
+	localTagsList  bool
 }
 
 var _ distribution.TagService = proxyTagService{}
@@ -55,6 +56,9 @@ func (pt proxyTagService) Untag(ctx context.Context, tag string) error {
 }
 
 func (pt proxyTagService) All(ctx context.Context) ([]string, error) {
+	if pt.localTagsList {
+		return pt.localTags.All(ctx)
+	}
 	err := pt.authChallenger.tryEstablishChallenges(ctx)
 	if err == nil {
 		tags, err := pt.remoteTags.All(ctx)

@@ -642,6 +642,9 @@ type Proxy struct {
 
 	// Enable writing to local storage
 	Write bool `yaml:"write"`
+
+	// Response local tags list
+	LocalTagsList bool `yaml:"localtagslist"`
 }
 
 // Parse parses an input configuration yaml document into a Configuration struct

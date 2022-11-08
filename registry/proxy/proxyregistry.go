@@ -27,6 +27,7 @@ type proxyingRegistry struct {
 	remoteURL      url.URL
 	authChallenger authChallenger
 	enableWrite    bool
+	localTagsList  bool
 }
 
 // NewRegistryPullThroughCache creates a registry acting as a pull through cache
@@ -108,7 +109,8 @@ func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Name
 			cm:        challenge.NewSimpleManager(),
 			cs:        cs,
 		},
-		enableWrite: config.Write,
+		enableWrite:   config.Write,
+		localTagsList: config.LocalTagsList,
 	}, nil
 }
 
@@ -182,6 +184,7 @@ func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named
 			remoteTags:     remoteRepo.Tags(ctx),
 			authChallenger: pr.authChallenger,
 			enableWrite:    pr.enableWrite,
+			localTagsList:  pr.localTagsList,
 		},
 	}, nil
 }
