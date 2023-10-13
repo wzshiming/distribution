@@ -67,6 +67,8 @@ func fetchAWSIPs(url string) (awsIPResponse, error) {
 	if err != nil {
 		return response, err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
 		return response, fmt.Errorf("failed to fetch network data. response = %s", body)
@@ -94,7 +96,7 @@ func (s *awsIPs) tryUpdate() error {
 		regionAllowed := false
 		if len(s.awsRegion) > 0 {
 			for _, ar := range s.awsRegion {
-				if strings.ToLower(region) == ar {
+				if strings.EqualFold(region, ar) {
 					regionAllowed = true
 					break
 				}

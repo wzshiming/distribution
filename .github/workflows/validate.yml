@@ -1,5 +1,9 @@
 name: validate
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -8,6 +12,9 @@ on:
     tags:
       - 'v*'
   pull_request:
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
 
 jobs:
   validate:

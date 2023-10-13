@@ -17,20 +17,33 @@ type Version string
 
 // Major returns the major (primary) component of a version.
 func (version Version) Major() uint {
-	majorPart := strings.Split(string(version), ".")[0]
+	majorPart, _, _ := strings.Cut(string(version), ".")
 	major, _ := strconv.ParseUint(majorPart, 10, 0)
 	return uint(major)
 }
 
 // Minor returns the minor (secondary) component of a version.
 func (version Version) Minor() uint {
-	minorPart := strings.Split(string(version), ".")[1]
+	_, minorPart, _ := strings.Cut(string(version), ".")
 	minor, _ := strconv.ParseUint(minorPart, 10, 0)
 	return uint(minor)
 }
 
 // CurrentVersion is the current storage driver Version.
 const CurrentVersion Version = "0.1"
+
+// WalkOptions provides options to the walk function that may adjust its behaviour
+type WalkOptions struct {
+	// If StartAfterHint is set, the walk may start with the first item lexographically
+	// after the hint, but it is not guaranteed and drivers may start the walk from the path.
+	StartAfterHint string
+}
+
+func WithStartAfterHint(startAfterHint string) func(*WalkOptions) {
+	return func(s *WalkOptions) {
+		s.StartAfterHint = startAfterHint
+	}
+}
 
 // StorageDriver defines methods that a Storage Driver must implement for a
 // filesystem-like key/value object storage. Storage Drivers are automatically
@@ -88,8 +101,9 @@ type StorageDriver interface {
 	// from the given path, calling f on each file.
 	// If the returned error from the WalkFn is ErrSkipDir and fileInfo refers
 	// to a directory, the directory will not be entered and Walk
-	// will continue the traversal.  If fileInfo refers to a normal file, processing stops
-	Walk(ctx context.Context, path string, f WalkFn) error
+	// will continue the traversal.
+	// If the returned error from the WalkFn is ErrFilledBuffer, processing stops.
+	Walk(ctx context.Context, path string, f WalkFn, options ...func(*WalkOptions)) error
 }
 
 // FileWriter provides an abstraction for an opened writable file-like object in
@@ -103,7 +117,7 @@ type FileWriter interface {
 	Size() int64
 
 	// Cancel removes any written content from this FileWriter.
-	Cancel() error
+	Cancel(context.Context) error
 
 	// Commit flushes all content written to this FileWriter and makes it
 	// available for future calls to StorageDriver.GetContent and

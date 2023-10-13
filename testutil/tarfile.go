@@ -3,6 +3,7 @@ package testutil
 import (
 	"archive/tar"
 	"bytes"
+	crand "crypto/rand"
 	"fmt"
 	"io"
 	mrand "math/rand"
@@ -45,7 +46,7 @@ func CreateRandomTarFile() (rs io.ReadSeeker, dgst digest.Digest, err error) {
 		randomData := make([]byte, fileSize)
 
 		// Fill up the buffer with some random data.
-		n, err := mrand.Read(randomData)
+		n, err := crand.Read(randomData)
 
 		if n != len(randomData) {
 			return nil, "", fmt.Errorf("short read creating random reader: %v bytes != %v bytes", n, len(randomData))
@@ -96,7 +97,7 @@ func CreateRandomLayers(n int) (map[digest.Digest]io.ReadSeeker, error) {
 // UploadBlobs lets you upload blobs to a repository
 func UploadBlobs(repository distribution.Repository, layers map[digest.Digest]io.ReadSeeker) error {
 	ctx := context.Background()
-	for digest, rs := range layers {
+	for dgst, rs := range layers {
 		wr, err := repository.Blobs(ctx).Create(ctx)
 		if err != nil {
 			return fmt.Errorf("unexpected error creating upload: %v", err)
@@ -106,7 +107,7 @@ func UploadBlobs(repository distribution.Repository, layers map[digest.Digest]io
 			return fmt.Errorf("unexpected error copying to upload: %v", err)
 		}
 
-		if _, err := wr.Commit(ctx, distribution.Descriptor{Digest: digest}); err != nil {
+		if _, err := wr.Commit(ctx, distribution.Descriptor{Digest: dgst}); err != nil {
 			return fmt.Errorf("unexpected error committinng upload: %v", err)
 		}
 	}

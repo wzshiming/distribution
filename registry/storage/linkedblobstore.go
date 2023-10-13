@@ -3,15 +3,16 @@ package storage
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"path"
 	"time"
 
 	"github.com/distribution/distribution/v3"
 	dcontext "github.com/distribution/distribution/v3/context"
-	"github.com/distribution/distribution/v3/reference"
 	"github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/distribution/v3/uuid"
+	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -35,7 +36,7 @@ type linkedBlobStore struct {
 	// linkPath allows one to control the repository blob link set to which
 	// the blob store dispatches. This is required because manifest and layer
 	// blobs have not yet been fully merged. At some point, this functionality
-	// should be removed an the blob links folder should be merged.
+	// should be removed and the blob links folder should be merged.
 	linkPath linkPathFunc
 
 	// linkDirectoryPathSpec locates the root directories in which one might find links
@@ -57,7 +58,7 @@ func (lbs *linkedBlobStore) Get(ctx context.Context, dgst digest.Digest) ([]byte
 	return lbs.blobStore.Get(ctx, canonical.Digest)
 }
 
-func (lbs *linkedBlobStore) Open(ctx context.Context, dgst digest.Digest) (distribution.ReadSeekCloser, error) {
+func (lbs *linkedBlobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadSeekCloser, error) {
 	canonical, err := lbs.Stat(ctx, dgst) // access check
 	if err != nil {
 		return nil, err
@@ -122,9 +123,9 @@ func WithMountFrom(ref reference.Canonical) distribution.BlobCreateOption {
 	})
 }
 
-// Writer begins a blob write session, returning a handle.
+// Create begins a blob write session, returning a handle.
 func (lbs *linkedBlobStore) Create(ctx context.Context, options ...distribution.BlobCreateOption) (distribution.BlobWriter, error) {
-	dcontext.GetLogger(ctx).Debug("(*linkedBlobStore).Writer")
+	dcontext.GetLogger(ctx).Debug("(*linkedBlobStore).Create")
 
 	var opts distribution.CreateOptions
 

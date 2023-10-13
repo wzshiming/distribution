@@ -42,13 +42,13 @@ type ResourceActions struct {
 // ClaimSet describes the main section of a JSON Web Token.
 type ClaimSet struct {
 	// Public claims
-	Issuer     string `json:"iss"`
-	Subject    string `json:"sub"`
-	Audience   string `json:"aud"`
-	Expiration int64  `json:"exp"`
-	NotBefore  int64  `json:"nbf"`
-	IssuedAt   int64  `json:"iat"`
-	JWTID      string `json:"jti"`
+	Issuer     string       `json:"iss"`
+	Subject    string       `json:"sub"`
+	Audience   AudienceList `json:"aud"`
+	Expiration int64        `json:"exp"`
+	NotBefore  int64        `json:"nbf"`
+	IssuedAt   int64        `json:"iat"`
+	JWTID      string       `json:"jti"`
 
 	// Private claims
 	Access []*ResourceActions `json:"access"`
@@ -83,7 +83,9 @@ type VerifyOptions struct {
 // NewToken parses the given raw token string
 // and constructs an unverified JSON Web Token.
 func NewToken(rawToken string) (*Token, error) {
-	parts := strings.Split(rawToken, TokenSeparator)
+	// We expect 3 parts, but limit the split to 4 to detect cases where
+	// the token contains too many (or too few) separators.
+	parts := strings.SplitN(rawToken, TokenSeparator, 4)
 	if len(parts) != 3 {
 		return nil, ErrMalformedToken
 	}
@@ -141,8 +143,8 @@ func (t *Token) Verify(verifyOpts VerifyOptions) error {
 	}
 
 	// Verify that the Audience claim is allowed.
-	if !contains(verifyOpts.AcceptedAudiences, t.Claims.Audience) {
-		log.Infof("token intended for another audience: %q", t.Claims.Audience)
+	if !containsAny(verifyOpts.AcceptedAudiences, t.Claims.Audience) {
+		log.Infof("token intended for another audience: %v", t.Claims.Audience)
 		return ErrInvalidToken
 	}
 
